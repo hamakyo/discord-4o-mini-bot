@@ -13,7 +13,7 @@ const client = new Client({
 // 4o-mini APIへのリクエスト関数
 async function get4oMiniResponse(message) {
   try {
-    const response = await axios.post('https://api-url-here/chat', {
+    const response = await axios.post('https://api.4o-mini.com/v1/chat', {  // 正しいエンドポイントURL
       message: message,
     }, {
       headers: {
