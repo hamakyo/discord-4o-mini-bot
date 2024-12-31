@@ -13,17 +13,25 @@ const client = new Client({
 // 4o-mini APIへのリクエスト関数
 async function get4oMiniResponse(message) {
   try {
-    const response = await axios.post('https://api.openai.com/v1/chat/completions', {  // 正しいエンドポイントURL
-      message: message,
+    const response = await axios.post('https://api.openai.com/v1/chat/completions', {
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "user",
+          content: message
+        }
+      ]
     }, {
       headers: {
         'Authorization': `Bearer ${process.env.API_KEY}`,
         'Content-Type': 'application/json',
       }
     });
-    return response.data.response;
+    return response.data.choices[0].message.content;
   } catch (error) {
-    console.error('API Error:', error);
+    console.error('API Error:', error.response?.data);
+    console.error('Status:', error.response?.status);
+    console.error('Headers:', error.response?.headers);
     return 'すみません、APIとの通信中にエラーが発生しました。';
   }
 }
