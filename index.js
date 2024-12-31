@@ -89,6 +89,9 @@ client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}!`);
 });
 
+// 最後に処理したメッセージIDを保存
+const processedMessages = new Set();
+
 // メッセージを受信したときのイベント
 client.on('messageCreate', async (message) => {
   // Botのメッセージは無視
@@ -98,30 +101,31 @@ client.on('messageCreate', async (message) => {
   if (!message.mentions.users.first()) return;
   if (message.mentions.users.first().id !== client.user.id) return;
 
-  try {
-    // タイピングインジケータを表示
-    await message.channel.sendTyping();
+  // 既に処理済みのメッセージは無視
+  if (processedMessages.has(message.id)) return;
+  processedMessages.add(message.id);
 
-    // メンションを除去してメッセージ本文を取得
-    // すべてのメンションパターンに対応
+  // 古いメッセージIDを削除（メモリ管理）
+  if (processedMessages.size > 100) {
+    const oldestId = processedMessages.values().next().value;
+    processedMessages.delete(oldestId);
+  }
+
+  try {
+    await message.channel.sendTyping();
     const content = message.content
-      .replace(/<@!?\d+>/g, '')  // メンションを削除
+      .replace(/<@!?\d+>/g, '')
       .trim();
     
-    // 空のメッセージの場合は無視
     if (!content) return;
 
-    // リセットコマンドの確認
     if (content.toLowerCase() === 'reset' || content.toLowerCase() === 'リセット') {
       const response = await resetConversation(message.channelId);
       await message.reply(response);
       return;
     }
 
-    // APIからの応答を取得
     const response = await get4oMiniResponse(message.channelId, content);
-    
-    // 応答を送信
     await message.reply(response);
   } catch (error) {
     console.error('Error:', error);
