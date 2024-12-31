@@ -91,30 +91,41 @@ client.once('ready', () => {
 
 // メッセージを受信したときのイベント
 client.on('messageCreate', async (message) => {
+  // Botのメッセージは無視
   if (message.author.bot) return;
 
-  if (message.mentions.has(client.user)) {
-    try {
-      await message.channel.sendTyping();
+  // 直接のメンションのみに反応するように修正
+  if (!message.mentions.users.first()) return;
+  if (message.mentions.users.first().id !== client.user.id) return;
 
-      // メンションを除去してメッセージ本文を取得
-      const content = message.content.replace(/<@!\d+>/g, '').trim();
-      
-      // リセットコマンドの確認
-      if (content.toLowerCase() === 'reset' || content.toLowerCase() === 'リセット') {
-        const response = await resetConversation(message.channelId);
-        await message.reply(response);
-        return;
-      }
+  try {
+    // タイピングインジケータを表示
+    await message.channel.sendTyping();
 
-      // 4o-mini APIからの応答を取得（チャンネルIDも渡す）
-      const response = await get4oMiniResponse(message.channelId, content);
-      
+    // メンションを除去してメッセージ本文を取得
+    // すべてのメンションパターンに対応
+    const content = message.content
+      .replace(/<@!?\d+>/g, '')  // メンションを削除
+      .trim();
+    
+    // 空のメッセージの場合は無視
+    if (!content) return;
+
+    // リセットコマンドの確認
+    if (content.toLowerCase() === 'reset' || content.toLowerCase() === 'リセット') {
+      const response = await resetConversation(message.channelId);
       await message.reply(response);
-    } catch (error) {
-      console.error('Error:', error);
-      await message.reply('エラーが発生しました。しばらく待ってからお試しください。');
+      return;
     }
+
+    // APIからの応答を取得
+    const response = await get4oMiniResponse(message.channelId, content);
+    
+    // 応答を送信
+    await message.reply(response);
+  } catch (error) {
+    console.error('Error:', error);
+    await message.reply('エラーが発生しました。しばらく待ってからお試しください。');
   }
 });
 
